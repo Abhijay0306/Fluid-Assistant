@@ -739,7 +739,7 @@
           <textarea class="chat-input" id="chat-input" rows="1"
             placeholder="Ask anything about company policy or report an issue…"></textarea>
         </div>
-        <button class="send-btn" id="send-btn" onclick="sendMessage()" title="Send (Ctrl+Enter)">
+        <button class="send-btn" id="send-btn" onclick="sendMessage()" title="Send (Enter) · New line (Shift+Enter)">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="1.75">
             <path d="M2 8h12M9 3l5 5-5 5"/>
           </svg>
@@ -852,7 +852,7 @@
     }
 
     document.getElementById('chat-input').addEventListener('keydown', e => {
-      if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); sendMessage(); }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     });
 
     // Auto-resize textarea
