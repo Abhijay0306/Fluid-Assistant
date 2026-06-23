@@ -1,9 +1,10 @@
+import base64
 from pathlib import Path
 
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent / ".env")
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -17,7 +18,7 @@ from ingest import (
     text_to_chunks,
 )
 from rules import load_rules
-from schemas import AskRequest, AskResponse, DocRequest, DocResponse
+from schemas import AskRequest, AskResponse, DocRequest, DocResponse, UploadB64Request
 from tools import list_tickets
 
 app = FastAPI(
@@ -63,32 +64,32 @@ def delete_doc(doc_id: str):
     delete_document(doc_id)
 
 
-# ── Document file upload ─────────────────────────────────────────────
+# ── Document file upload (base64 JSON — works on Vercel serverless) ──
 
 ALLOWED_EXTENSIONS = {"pdf", "txt", "md", "docx"}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 @app.post("/api/upload", response_model=DocResponse, status_code=201)
-async def upload_file(
-    file: UploadFile = File(...),
-    title: str = Form(""),
-):
-    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in (file.filename or "") else ""
+def upload_file(request: UploadB64Request) -> DocResponse:
+    ext = request.filename.rsplit(".", 1)[-1].lower() if "." in request.filename else ""
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(422, f"Unsupported file type .{ext}. Allowed: {', '.join(ALLOWED_EXTENSIONS)}")
 
-    data = await file.read()
+    try:
+        data = base64.b64decode(request.content_b64)
+    except Exception:
+        raise HTTPException(422, "Invalid base64 content")
+
     if len(data) > MAX_FILE_SIZE:
         raise HTTPException(422, "File exceeds 10 MB limit")
 
-    # validate non-empty using flat text check
-    if not extract_text(data, file.filename).strip():
+    if not extract_text(data, request.filename).strip():
         raise HTTPException(422, "Could not extract text from file")
 
-    chunks = extract_structured_chunks(data, file.filename)
-    doc_title = title.strip() or file.filename.rsplit(".", 1)[0].replace("_", " ").title()
-    entry = save_document(title=doc_title, chunks=chunks, filename=file.filename)
+    chunks = extract_structured_chunks(data, request.filename)
+    doc_title = request.title.strip() or request.filename.rsplit(".", 1)[0].replace("_", " ").title()
+    entry = save_document(title=doc_title, chunks=chunks, filename=request.filename)
     return DocResponse(**entry)
 
 
@@ -110,9 +111,12 @@ def get_rules():
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request, exc):
+    import traceback
     return JSONResponse(
         status_code=500,
         content={
+            "detail": f"{type(exc).__name__}: {exc}",
+            "trace": traceback.format_exc(),
             "answer": "An unexpected error occurred. Please try again.",
             "intent": "clarify",
             "action_taken": None,

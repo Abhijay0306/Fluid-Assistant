@@ -58,6 +58,12 @@ class DocRequest(BaseModel):
         return v
 
 
+class UploadB64Request(BaseModel):
+    filename: str
+    content_b64: str        # base64-encoded file bytes
+    title: str = ""
+
+
 class DocResponse(BaseModel):
     id: str
     title: str
