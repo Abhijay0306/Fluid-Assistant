@@ -1186,8 +1186,11 @@
         }
 
         if (!res.ok) {
-          const err = await res.json().catch(() => ({ detail: res.statusText }));
-          throw new Error(err.detail || 'Upload failed');
+          const body = await res.text();
+          console.error('Upload failed', res.status, body);
+          let detail = res.statusText;
+          try { detail = JSON.parse(body).detail || body; } catch {}
+          throw new Error(`${res.status}: ${detail}`);
         }
 
         // Reset form
@@ -1199,6 +1202,7 @@
         showStatus('success', '✓ Document uploaded and indexed.');
         loadDocs();
       } catch (e) {
+        console.error('Upload error:', e);
         showStatus('error', '✗ ' + e.message);
       } finally {
         btn.disabled = false;
