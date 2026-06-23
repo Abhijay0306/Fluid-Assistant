@@ -1,0 +1,16 @@
+Title: Expense Reimbursement Policy — doddle2dollars
+
+Meal Allowance
+Meals are reimbursed up to 800 INR per day while travelling on company business. Alcohol is not reimbursable under any circumstance. Team meals (hosting clients or candidates) are reimbursable up to 2,000 INR per person with prior approval from a department head.
+
+Travel
+Economy class is the standard for flights under 6 hours. Business class requires VP-level approval. Taxis and ride-shares are reimbursable; personal vehicle mileage is reimbursed at 12 INR per km.
+
+Hotel
+Hotel stays are reimbursed up to 5,000 INR per night in Tier-1 cities (Mumbai, Delhi, Bengaluru) and 3,500 INR per night elsewhere. Costs above these limits require pre-approval.
+
+Filing Claims
+All claims must be filed within 30 days of the expense date. Receipts are mandatory for any single expense above 200 INR. Claims are submitted via the Finance portal. Reimbursement is processed within 7 working days of approval.
+
+Expense Disputes
+If an expense claim is rejected and you believe it was done in error, raise a dispute via the HR helpdesk (category: HR). Do not raise it as an IT ticket.

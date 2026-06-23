@@ -1,0 +1,19 @@
+Title: Remote Work Policy — doddle2dollars
+
+Eligibility
+All full-time employees who have completed their probation period (90 days) are eligible for remote work. Employees on a performance improvement plan are required to work from office until the plan concludes.
+
+Work-from-Home Days
+Employees may work remotely up to 3 days per week. The remaining days must be in-office unless a specific exception is approved by the department head. Tuesdays and Thursdays are designated anchor days — all employees are expected to be in office on these days.
+
+Equipment
+The company provides a laptop and necessary peripherals. Employees working remotely are responsible for maintaining a stable internet connection (minimum 20 Mbps). Mobile data reimbursement is available up to 500 INR per month for employees without a broadband connection at home — submit via the Finance portal.
+
+Working Hours
+Remote employees must be reachable and responsive during core hours (10:00–17:00 IST). Availability must be reflected in the company calendar. Unplanned absences during core hours should be communicated to the manager immediately.
+
+Security
+When working remotely, employees must connect via GlobalProtect VPN before accessing any internal system. Sensitive documents must not be saved to personal cloud storage (Google Drive, Dropbox, iCloud). Use the company SharePoint or OneDrive account only.
+
+Violations
+Repeated violations of the remote work policy may result in the remote work privilege being revoked. Serious violations (e.g., accessing confidential data on personal devices without VPN) are subject to disciplinary action under the company's Information Security policy.

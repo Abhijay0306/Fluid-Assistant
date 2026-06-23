@@ -1,0 +1,20 @@
+knowledge:
+  leave: |
+    Casual leave: 12 days per year.
+    Sick leave: 10 days per year.
+    Earned leave: 18 days per year, carries over up to 30 days.
+  expenses: |
+    Meals reimbursed up to 800 INR per day while travelling.
+    Claims must be filed within 30 days with receipts.
+  it: |
+    Password reset at reset.doddle2dollars.local, link valid 24 hours.
+    VPN is GlobalProtect; contact IT for first-time setup.
+
+action_rules:
+  categories: [IT, HR, Facilities, Other]
+  priorities: [low, medium, high]
+  required_fields: [summary, category, priority]
+  policies:
+    - High priority requires a real urgency signal (deadline, outage, blocked work).
+    - Expense disputes are category HR, not IT.
+    - If a required field cannot be inferred, note it rather than guessing.

@@ -1,0 +1,19 @@
+Title: IT Support Guide — doddle2dollars
+
+Password Reset
+Self-service password reset is available at reset.doddle2dollars.local. The reset link is valid for 24 hours. If you are locked out and cannot access the portal, call the IT helpdesk at ext. 1010 or raise a ticket.
+
+VPN Access
+The company VPN is GlobalProtect. Download it from software.doddle2dollars.local/vpn. For first-time setup, contact IT support — they will schedule a 15-minute onboarding call. VPN is required for all remote access to internal systems.
+
+Hardware Issues
+For hardware faults (laptop, monitor, keyboard, docking station), raise an IT ticket immediately. If the fault is preventing work (e.g., laptop will not power on, screen is broken), mark priority as high and include your work deadline in the summary. IT will aim to provide a loan device within 2 hours for high-priority tickets during business hours.
+
+Software Requests
+New software installations must be approved by your department head before submitting an IT ticket. Include the software name, version, and business justification in the ticket summary.
+
+Data and Security
+Report suspected phishing emails by forwarding them to phishing@doddle2dollars.com. If you believe your account has been compromised, call ext. 1010 immediately — do not just raise a ticket.
+
+Supported Hours
+IT support is available Monday to Friday, 09:00–18:00 IST. For critical outages outside these hours, page the on-call engineer via PagerDuty (details on the IT intranet).
