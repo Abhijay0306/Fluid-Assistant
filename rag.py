@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import os
 import re
-from pathlib import Path
+from functools import lru_cache
 from typing import Optional
 
 from openai import OpenAI
@@ -43,25 +43,39 @@ def embed(texts: list[str]) -> list[list[float]]:
     return [e.embedding for e in response.data]
 
 
+@lru_cache(maxsize=512)
+def _embed_single_cached(text: str) -> tuple:
+    """Cached single-text embedding — avoids re-calling the API for repeated queries."""
+    return tuple(embed([text])[0])
+
+
 def retrieve(query: str, top_k: int = TOP_K) -> list[dict]:
-    """Embed query and return top-k similar chunks from Supabase."""
-    query_embedding = embed([query])[0]
+    """Embed query (cached) and return top-k chunks sorted newest-first so the LLM
+    sees the most recent upload first when policies conflict."""
+    query_embedding = list(_embed_single_cached(query))
     sb = get_supabase()
     result = sb.rpc(
         "match_chunks",
         {"query_embedding": query_embedding, "match_count": top_k},
     ).execute()
     rows = result.data or []
-    return [
+
+    chunks = [
         {
             "text": r["chunk_text"],
             "origin": r["origin"],
             "filename": r["filename"],
             "page_number": r.get("page_number"),
             "section": r.get("section"),
+            "doc_created_at": r.get("doc_created_at"),
         }
         for r in rows
     ]
+
+    # Newest document first — when two chunks conflict the LLM sees the
+    # more recent one earlier and the system prompt tells it to prefer it.
+    chunks.sort(key=lambda c: c.get("doc_created_at") or "", reverse=True)
+    return chunks
 
 
 def ingest_document(document_id: str, chunks: list[dict], origin: str, filename: str) -> int:

@@ -112,6 +112,7 @@ def run_agent(question: str, rules: dict) -> dict:
             filename=c["filename"],
             page_number=c.get("page_number"),
             section=c.get("section"),
+            doc_created_at=c.get("doc_created_at"),
         )
         for c in chunks
     ]
@@ -144,11 +145,13 @@ def _build_system_prompt(rules: dict, chunks: list[dict]) -> str:
 
 INSTRUCTIONS:
 - Rules above are authoritative. Retrieved documents are supplementary — if they conflict with a rule, the rule wins.
+- Retrieved documents are listed newest-first. When two documents conflict on the same topic, ALWAYS prefer the newer one (listed first). Treat it as the current policy.
 - If the user is asking for information, answer from the knowledge base and retrieved documents.
 - If the user has a problem that requires someone to act, call create_ticket.
 - If the request is too vague to answer or act on, ask for clarification.
 - Never invent policy not in the knowledge base or retrieved documents.
 - Do not call create_ticket for pure information questions.
+- Format your response using markdown: use **bold** for key figures, bullet points for lists, and clear headings where appropriate.
 """
 
 
@@ -163,10 +166,15 @@ def _format_chunks(chunks: list[dict]) -> str:
             meta_parts.append(f"p.{c['page_number']}")
         if c.get("section"):
             meta_parts.append(f"§ {c['section']}")
+        if c.get("doc_created_at"):
+            meta_parts.append(f"uploaded {c['doc_created_at'][:10]}")
         tag = "[" + " — ".join(meta_parts) + "]"
         parts.append(f"{tag}\n{c['text']}")
 
-    return "RETRIEVED DOCUMENTS (supplementary, use to ground your answer):\n\n" + "\n\n---\n\n".join(parts)
+    return (
+        "RETRIEVED DOCUMENTS (newest first — prefer earlier entries when sources conflict):\n\n"
+        + "\n\n---\n\n".join(parts)
+    )
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────

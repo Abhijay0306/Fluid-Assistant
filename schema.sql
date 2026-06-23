@@ -42,19 +42,21 @@ create index if not exists idx_chunks_hnsw
   on document_chunks using hnsw (embedding vector_cosine_ops);
 
 -- 5. Similarity-search function used by rag.py
-create or replace function match_chunks(
+drop function if exists match_chunks(vector, integer, double precision);
+create function match_chunks(
   query_embedding vector(1536),
   match_count     int   default 4,
   min_similarity  float default 0.25
 )
 returns table (
-  id           uuid,
-  chunk_text   text,
-  origin       text,
-  filename     text,
-  page_number  int,
-  section      text,
-  similarity   float
+  id              uuid,
+  chunk_text      text,
+  origin          text,
+  filename        text,
+  page_number     int,
+  section         text,
+  doc_created_at  timestamptz,
+  similarity      float
 )
 language plpgsql
 as $$
@@ -67,8 +69,10 @@ begin
     dc.filename,
     dc.page_number,
     dc.section,
+    d.created_at as doc_created_at,
     1 - (dc.embedding <=> query_embedding) as similarity
   from document_chunks dc
+  join documents d on d.id = dc.document_id
   where dc.embedding is not null
     and (1 - (dc.embedding <=> query_embedding)) > min_similarity
   order by dc.embedding <=> query_embedding

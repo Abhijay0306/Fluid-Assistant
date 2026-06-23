@@ -23,6 +23,7 @@ class Source(BaseModel):
     filename: str
     page_number: Optional[int] = None
     section: Optional[str] = None
+    doc_created_at: Optional[str] = None
 
 
 class AskResponse(BaseModel):

@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Display:ital,opsz,wght@0,32..48,400;0,32..48,475;0,32..48,500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -318,8 +319,30 @@
       font-size: 14px;
       line-height: 1.65;
       color: var(--body);
-      white-space: pre-wrap;
     }
+
+    /* Markdown inside assistant messages */
+    .msg-text p  { margin: 0 0 8px; }
+    .msg-text p:last-child { margin-bottom: 0; }
+    .msg-text strong { font-weight: 600; color: var(--ink); }
+    .msg-text em { font-style: italic; }
+    .msg-text ul, .msg-text ol { padding-left: 20px; margin: 4px 0 8px; }
+    .msg-text li { margin-bottom: 3px; }
+    .msg-text h1,.msg-text h2,.msg-text h3 {
+      font-weight: 600; color: var(--ink); margin: 10px 0 4px;
+    }
+    .msg-text h1 { font-size: 15px; }
+    .msg-text h2 { font-size: 14px; }
+    .msg-text h3 { font-size: 13px; }
+    .msg-text code {
+      background: var(--surface-strong); border-radius: 3px;
+      padding: 1px 5px; font-size: 13px;
+    }
+    .msg-text pre {
+      background: var(--surface-strong); border-radius: var(--r-md);
+      padding: 10px 12px; overflow-x: auto; margin: 6px 0;
+    }
+    .msg-text pre code { background: none; padding: 0; }
 
     /* Ticket result inside message */
     .ticket-result {
@@ -1050,10 +1073,12 @@
       const body = document.createElement('div');
       body.className = 'msg-body';
 
-      // Answer text
+      // Answer text — rendered as markdown
       const txt = document.createElement('div');
       txt.className = 'msg-text';
-      txt.textContent = data.answer;
+      txt.innerHTML = typeof marked !== 'undefined'
+        ? marked.parse(data.answer || '')
+        : esc(data.answer || '');
       body.appendChild(txt);
 
       // Ticket result
@@ -1093,7 +1118,8 @@
         data.sources.forEach(s => {
           const locPills = [
             s.page_number != null ? `<span class="source-chip-loc">p. ${s.page_number}</span>` : '',
-            s.section       ? `<span class="source-chip-loc">§ ${esc(s.section)}</span>` : '',
+            s.section          ? `<span class="source-chip-loc">§ ${esc(s.section)}</span>` : '',
+            s.doc_created_at   ? `<span class="source-chip-loc">${s.doc_created_at.slice(0,10)}</span>` : '',
           ].join('');
           list.innerHTML += `
             <div class="source-chip">
