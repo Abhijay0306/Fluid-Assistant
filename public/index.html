@@ -655,6 +655,95 @@
     .td-summary { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .td-date    { white-space: nowrap; font-size: 12px; color: var(--muted); }
 
+    /* ────────────────────────────────────────────────────────────── */
+    /* KNOWLEDGE BASE PANEL                                          */
+    /* ────────────────────────────────────────────────────────────── */
+    #panel-kb { overflow: hidden; }
+
+    .kb-content {
+      flex: 1; overflow-y: auto; padding: 24px;
+      display: flex; flex-direction: column; gap: 24px;
+    }
+
+    .kb-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) { .kb-grid { grid-template-columns: 1fr; } }
+
+    .kb-section-title {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 12px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .kb-section-count {
+      font-size: 11px; font-weight: 500;
+      background: var(--surface-strong); color: var(--muted);
+      padding: 2px 7px; border-radius: var(--r-pill);
+    }
+
+    /* Policy rules */
+    .rules-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .rule-card {
+      background: var(--canvas);
+      border: 1px solid var(--hairline);
+      border-radius: var(--r-md);
+      overflow: hidden;
+    }
+
+    .rule-card-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      background: var(--surface-soft);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .rule-card-key {
+      font-size: 12px; font-weight: 600; color: var(--ink);
+      text-transform: capitalize; flex: 1;
+    }
+
+    .rule-card-chevron {
+      flex-shrink: 0; transition: transform 0.15s; color: var(--muted);
+    }
+
+    .rule-card.open .rule-card-chevron { transform: rotate(180deg); }
+
+    .rule-card-body {
+      display: none; padding: 12px 14px;
+      font-size: 13px; line-height: 1.65; color: var(--body);
+      white-space: pre-wrap; border-top: 1px solid var(--hairline);
+    }
+
+    .rule-card.open .rule-card-body { display: block; }
+
+    /* Action rules pills */
+    .action-rules-card {
+      background: var(--canvas); border: 1px solid var(--hairline);
+      border-radius: var(--r-md); padding: 14px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .ar-row { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; }
+    .ar-label { font-weight: 500; color: var(--ink); min-width: 80px; flex-shrink: 0; padding-top: 2px; }
+    .ar-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+
+    .ar-policy-list { display: flex; flex-direction: column; gap: 4px; }
+    .ar-policy-item {
+      font-size: 12px; color: var(--muted); line-height: 1.5;
+      padding-left: 12px; position: relative;
+    }
+    .ar-policy-item::before {
+      content: '·'; position: absolute; left: 0; color: var(--muted);
+    }
+
     /* ── Spinner ──────────────────────────────────────────────────── */
     .spinner {
       display: inline-block; width: 16px; height: 16px;
@@ -702,6 +791,12 @@
           <path d="M5 7h6M5 10h4"/>
         </svg>
         <span>Tickets</span>
+      </button>
+      <button class="nav-item" data-panel="kb" onclick="switchPanel('kb', this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M2 3h5v10H2zM9 3h5v10H9z"/><path d="M7 3v10"/>
+        </svg>
+        <span>Knowledge Base</span>
       </button>
     </nav>
 
@@ -805,6 +900,13 @@
       </div>
     </div>
 
+    <!-- ── Knowledge Base panel ──────────────────────────────────── -->
+    <div class="panel" id="panel-kb">
+      <div class="kb-content" id="kb-content">
+        <div class="empty-state"><div class="spinner"></div></div>
+      </div>
+    </div>
+
     <!-- ── Tickets panel ───────────────────────────────────────── -->
     <div class="panel" id="panel-tickets">
       <div class="tickets-content">
@@ -828,9 +930,10 @@
 
     // ── Panel switching ───────────────────────────────────────────────
     const PANEL_META = {
-      chat:    { title: 'Chat',      sub: 'Ask a policy question or report a problem' },
-      docs:    { title: 'Documents', sub: 'Upload files or paste text to grow the knowledge base' },
-      tickets: { title: 'Tickets',   sub: 'Support tickets raised by the assistant' },
+      chat:    { title: 'Chat',           sub: 'Ask a policy question or report a problem' },
+      docs:    { title: 'Documents',      sub: 'Upload files or paste text to grow the knowledge base' },
+      tickets: { title: 'Tickets',        sub: 'Support tickets raised by the assistant' },
+      kb:      { title: 'Knowledge Base', sub: 'All indexed documents and policy rules in one place' },
     };
 
     function switchPanel(name, btn) {
@@ -843,6 +946,7 @@
       document.getElementById('topbar-sub').textContent   = meta.sub;
       if (name === 'docs')    loadDocs();
       if (name === 'tickets') loadTickets();
+      if (name === 'kb')      loadKB();
     }
 
     // ── Chat ──────────────────────────────────────────────────────────
@@ -1173,6 +1277,94 @@
       } catch {
         wrap.innerHTML = `<div class="empty-state"><div class="empty-state-title">Could not load tickets</div></div>`;
       }
+    }
+
+    // ── Knowledge Base ────────────────────────────────────────────────
+    async function loadKB() {
+      const wrap = document.getElementById('kb-content');
+      wrap.innerHTML = `<div class="empty-state"><div class="spinner"></div></div>`;
+
+      let docs = [], rules = {};
+      try {
+        const [dRes, rRes] = await Promise.all([
+          fetch(`${API}/api/docs`),
+          fetch(`${API}/api/rules`),
+        ]);
+        docs  = await dRes.json();
+        rules = await rRes.json();
+      } catch {
+        wrap.innerHTML = `<div class="empty-state"><div class="empty-state-title">Could not load knowledge base</div></div>`;
+        return;
+      }
+
+      // ── Documents section ───────────────────────────────────────────
+      const docRows = docs.length
+        ? docs.map(d => `
+          <div class="rule-card">
+            <div class="rule-card-header" onclick="this.parentElement.classList.toggle('open')">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;color:var(--muted)">
+                <path d="M4 2h6l3 3v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/>
+                <path d="M10 2v3h3"/>
+              </svg>
+              <span class="rule-card-key">${esc(d.title)}</span>
+              <span style="font-size:11px;color:var(--muted);margin-right:8px">${esc(d.origin)}</span>
+              <svg class="rule-card-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M2 4l4 4 4-4"/>
+              </svg>
+            </div>
+            <div class="rule-card-body">${esc(d.filename || d.title)}</div>
+          </div>`).join('')
+        : `<div style="font-size:13px;color:var(--muted);padding:8px 0">No documents uploaded yet.</div>`;
+
+      // ── Policy knowledge section ────────────────────────────────────
+      const knowledge = rules.knowledge ?? {};
+      const knowledgeRows = Object.entries(knowledge).map(([key, val]) => {
+        const body = typeof val === 'object' ? JSON.stringify(val, null, 2) : String(val);
+        return `
+          <div class="rule-card">
+            <div class="rule-card-header" onclick="this.parentElement.classList.toggle('open')">
+              <span class="rule-card-key">${esc(key.replace(/_/g, ' '))}</span>
+              <svg class="rule-card-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M2 4l4 4 4-4"/>
+              </svg>
+            </div>
+            <div class="rule-card-body">${esc(body)}</div>
+          </div>`;
+      }).join('');
+
+      // ── Action rules section ────────────────────────────────────────
+      const ar = rules.action_rules ?? {};
+      const categoryCapsules = (ar.categories ?? [])
+        .map(c => `<span class="badge badge-${esc(c.toLowerCase())}">${esc(c)}</span>`).join('');
+      const priorityCapsules = (ar.priorities ?? [])
+        .map(p => `<span class="badge badge-${esc(p)}">${esc(p)}</span>`).join('');
+      const policyItems = (ar.policies ?? [])
+        .map(p => `<div class="ar-policy-item">${esc(p)}</div>`).join('');
+
+      const actionCard = `
+        <div class="action-rules-card">
+          ${categoryCapsules ? `<div class="ar-row"><span class="ar-label">Categories</span><div class="ar-pills">${categoryCapsules}</div></div>` : ''}
+          ${priorityCapsules ? `<div class="ar-row"><span class="ar-label">Priorities</span><div class="ar-pills">${priorityCapsules}</div></div>` : ''}
+          ${policyItems ? `<div class="ar-row"><span class="ar-label">Policies</span><div class="ar-policy-list">${policyItems}</div></div>` : ''}
+        </div>`;
+
+      wrap.innerHTML = `
+        <div class="kb-grid">
+          <div>
+            <div class="kb-section-title">
+              Documents
+              <span class="kb-section-count">${docs.length}</span>
+            </div>
+            <div class="rules-list">${docRows}</div>
+          </div>
+          <div>
+            <div class="kb-section-title">Policy Rules</div>
+            <div class="rules-list">${knowledgeRows}</div>
+            ${ar.categories || ar.priorities || ar.policies ? `
+            <div class="kb-section-title" style="margin-top:20px">Action Rules</div>
+            ${actionCard}` : ''}
+          </div>
+        </div>`;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────

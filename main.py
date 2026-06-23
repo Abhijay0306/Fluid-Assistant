@@ -90,6 +90,13 @@ def get_tickets():
     return list_tickets()
 
 
+# ── Knowledge base (rules.yaml) ──────────────────────────────────────
+
+@app.get("/api/rules")
+def get_rules():
+    return load_rules()
+
+
 # ── Error handler ────────────────────────────────────────────────────
 
 @app.exception_handler(Exception)
