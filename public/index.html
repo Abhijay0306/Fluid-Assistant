@@ -1170,10 +1170,12 @@
       try {
         let res;
         if (selectedFile) {
-          const form = new FormData();
-          form.append('file', selectedFile);
-          if (title) form.append('title', title);
-          res = await fetch(`${API}/api/upload`, { method: 'POST', body: form });
+          const content_b64 = await fileToBase64(selectedFile);
+          res = await fetch(`${API}/api/upload`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: selectedFile.name, title, content_b64 }),
+          });
         } else if (title && content) {
           res = await fetch(`${API}/api/docs`, {
             method: 'POST',
@@ -1391,6 +1393,15 @@
     function esc(s) {
       return String(s ?? '')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
     }
 
     function relTime(iso) {
