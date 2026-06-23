@@ -148,7 +148,7 @@ def _docx_to_chunks(data: bytes) -> list[dict]:
         text = para.text.strip()
         if not text:
             continue
-        if para.style.name.startswith("Heading"):
+        if para.style and para.style.name and para.style.name.startswith("Heading"):
             _flush()
             current_section = text
         else:
