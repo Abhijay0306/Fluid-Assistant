@@ -53,30 +53,38 @@ def retrieve(query: str, top_k: int = TOP_K) -> list[dict]:
     ).execute()
     rows = result.data or []
     return [
-        {"text": r["chunk_text"], "origin": r["origin"], "filename": r["filename"]}
+        {
+            "text": r["chunk_text"],
+            "origin": r["origin"],
+            "filename": r["filename"],
+            "page_number": r.get("page_number"),
+            "section": r.get("section"),
+        }
         for r in rows
     ]
 
 
-def ingest_document(document_id: str, text: str, origin: str, filename: str) -> int:
-    """Chunk text, embed all chunks, and store in document_chunks. Returns chunk count."""
-    chunks = chunk_text(text)
+def ingest_document(document_id: str, chunks: list[dict], origin: str, filename: str) -> int:
+    """Embed pre-chunked [{text, page_number, section}] dicts and store in document_chunks."""
     if not chunks:
         return 0
 
-    embeddings = embed(chunks)
+    texts = [c["text"] for c in chunks]
+    embeddings = embed(texts)
     sb = get_supabase()
 
     rows = [
         {
             "document_id": document_id,
             "chunk_index": i,
-            "chunk_text": chunk,
+            "chunk_text": c["text"],
             "embedding": emb,
             "origin": origin,
             "filename": filename,
+            "page_number": c.get("page_number"),
+            "section": c.get("section"),
         }
-        for i, (chunk, emb) in enumerate(zip(chunks, embeddings))
+        for i, (c, emb) in enumerate(zip(chunks, embeddings))
     ]
     sb.table("document_chunks").insert(rows).execute()
     return len(rows)

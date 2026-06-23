@@ -32,7 +32,9 @@ create table if not exists document_chunks (
   chunk_text   text    not null,
   embedding    vector(1536),
   origin       text    not null,
-  filename     text    not null
+  filename     text    not null,
+  page_number  int,        -- null for non-PDF / pasted text
+  section      text        -- nearest heading above this chunk
 );
 
 -- HNSW index (works with small datasets; no minimum row count)
@@ -46,11 +48,13 @@ create or replace function match_chunks(
   min_similarity  float default 0.25
 )
 returns table (
-  id          uuid,
-  chunk_text  text,
-  origin      text,
-  filename    text,
-  similarity  float
+  id           uuid,
+  chunk_text   text,
+  origin       text,
+  filename     text,
+  page_number  int,
+  section      text,
+  similarity   float
 )
 language plpgsql
 as $$
@@ -61,6 +65,8 @@ begin
     dc.chunk_text,
     dc.origin,
     dc.filename,
+    dc.page_number,
+    dc.section,
     1 - (dc.embedding <=> query_embedding) as similarity
   from document_chunks dc
   where dc.embedding is not null
@@ -69,3 +75,7 @@ begin
   limit match_count;
 end;
 $$;
+
+-- ── Migration (run if table already existed) ────────────────────────
+-- alter table document_chunks add column if not exists page_number int;
+-- alter table document_chunks add column if not exists section text;

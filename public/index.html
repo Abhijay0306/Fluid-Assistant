@@ -374,6 +374,17 @@
       font-size: 12px; font-weight: 500; color: var(--ink); margin-bottom: 2px;
     }
 
+    .source-chip-meta {
+      display: flex; flex-wrap: wrap; gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .source-chip-loc {
+      font-size: 11px; font-weight: 500;
+      background: var(--surface-strong); color: var(--muted);
+      padding: 1px 6px; border-radius: var(--r-pill);
+    }
+
     .source-chip-text {
       font-size: 12px; color: var(--muted); line-height: 1.5;
       overflow: hidden;
@@ -1080,11 +1091,16 @@
         list.id = togId;
         list.style.display = 'none';
         data.sources.forEach(s => {
+          const locPills = [
+            s.page_number != null ? `<span class="source-chip-loc">p. ${s.page_number}</span>` : '',
+            s.section       ? `<span class="source-chip-loc">§ ${esc(s.section)}</span>` : '',
+          ].join('');
           list.innerHTML += `
             <div class="source-chip">
               <div class="source-chip-origin"><span class="badge badge-${s.origin}">${s.origin}</span></div>
               <div class="source-chip-body">
                 <div class="source-chip-file">${esc(s.filename)}</div>
+                ${locPills ? `<div class="source-chip-meta">${locPills}</div>` : ''}
                 <div class="source-chip-text">${esc(s.text)}</div>
               </div>
             </div>`;

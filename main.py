@@ -8,7 +8,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from agent import run_agent
-from ingest import delete_document, extract_text, list_documents, save_document
+from ingest import (
+    delete_document,
+    extract_structured_chunks,
+    extract_text,
+    list_documents,
+    save_document,
+    text_to_chunks,
+)
 from rules import load_rules
 from schemas import AskRequest, AskResponse, DocRequest, DocResponse
 from tools import list_tickets
@@ -41,7 +48,8 @@ def ask(request: AskRequest) -> AskResponse:
 
 @app.post("/api/docs", response_model=DocResponse, status_code=201)
 def add_doc(request: DocRequest) -> DocResponse:
-    entry = save_document(title=request.title, content=request.content)
+    chunks = text_to_chunks(request.content)
+    entry = save_document(title=request.title, chunks=chunks)
     return DocResponse(**entry)
 
 
@@ -74,12 +82,13 @@ async def upload_file(
     if len(data) > MAX_FILE_SIZE:
         raise HTTPException(422, "File exceeds 10 MB limit")
 
-    content = extract_text(data, file.filename)
-    if not content.strip():
+    # validate non-empty using flat text check
+    if not extract_text(data, file.filename).strip():
         raise HTTPException(422, "Could not extract text from file")
 
+    chunks = extract_structured_chunks(data, file.filename)
     doc_title = title.strip() or file.filename.rsplit(".", 1)[0].replace("_", " ").title()
-    entry = save_document(title=doc_title, content=content, filename=file.filename)
+    entry = save_document(title=doc_title, chunks=chunks, filename=file.filename)
     return DocResponse(**entry)
 
 

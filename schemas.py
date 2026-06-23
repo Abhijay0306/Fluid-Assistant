@@ -19,8 +19,10 @@ class AskRequest(BaseModel):
 
 class Source(BaseModel):
     text: str
-    origin: str    # "seeded" or "uploaded"
+    origin: str         # "seeded" or "uploaded"
     filename: str
+    page_number: Optional[int] = None
+    section: Optional[str] = None
 
 
 class AskResponse(BaseModel):

@@ -106,7 +106,13 @@ def run_agent(question: str, rules: dict) -> dict:
         return _clarify("No response from LLM")
 
     sources = [
-        Source(text=c["text"], origin=c["origin"], filename=c["filename"])
+        Source(
+            text=c["text"],
+            origin=c["origin"],
+            filename=c["filename"],
+            page_number=c.get("page_number"),
+            section=c.get("section"),
+        )
         for c in chunks
     ]
 
@@ -152,7 +158,12 @@ def _format_chunks(chunks: list[dict]) -> str:
 
     parts = []
     for c in chunks:
-        tag = f"[{c['origin'].upper()} — {c['filename']}]"
+        meta_parts = [c["origin"].upper(), c["filename"]]
+        if c.get("page_number"):
+            meta_parts.append(f"p.{c['page_number']}")
+        if c.get("section"):
+            meta_parts.append(f"§ {c['section']}")
+        tag = "[" + " — ".join(meta_parts) + "]"
         parts.append(f"{tag}\n{c['text']}")
 
     return "RETRIEVED DOCUMENTS (supplementary, use to ground your answer):\n\n" + "\n\n---\n\n".join(parts)
