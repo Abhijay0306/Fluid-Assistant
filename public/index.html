@@ -824,9 +824,7 @@
 
   <script>
     // ── API base ─────────────────────────────────────────────────────
-    const API = (window.location.port === '5353' || window.location.hostname === 'localhost' && window.location.port === '5353')
-      ? 'http://localhost:8000'
-      : '';
+    const API = window.location.port === '5353' ? 'http://localhost:8000' : '';
 
     // ── Panel switching ───────────────────────────────────────────────
     const PANEL_META = {
