@@ -708,6 +708,23 @@
 
     @media (max-width: 900px) { .kb-grid { grid-template-columns: 1fr; } }
 
+    .kb-badge-latest {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; padding: 2px 7px;
+      background: #eefff0; color: #006400;
+      border: 1px solid #a5e0a8; border-radius: var(--r-pill);
+      flex-shrink: 0;
+    }
+
+    .kb-latest > .rule-card-header { border-left: 3px solid #006400; }
+
+    .kb-update-trace {
+      font-size: 12px; color: var(--muted);
+      background: var(--warn-bg); border: 1px solid var(--warn-border);
+      border-radius: var(--r-sm); padding: 5px 9px; margin-bottom: 8px;
+    }
+    .kb-update-trace em { font-style: normal; font-weight: 500; color: var(--warn-ink); }
+
     .kb-section-title {
       font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
       text-transform: uppercase; color: var(--muted);
@@ -962,6 +979,8 @@
     // ── API base ─────────────────────────────────────────────────────
     const API = window.location.port === '5353' ? 'http://localhost:8000' : '';
 
+    let _kbLoaded = false;
+
     // ── Panel switching ───────────────────────────────────────────────
     const PANEL_META = {
       chat:    { title: 'Chat',           sub: 'Ask a policy question or report a problem' },
@@ -980,7 +999,7 @@
       document.getElementById('topbar-sub').textContent   = meta.sub;
       if (name === 'docs')    loadDocs();
       if (name === 'tickets') loadTickets();
-      if (name === 'kb')      loadKB();
+      if (name === 'kb')      { _kbLoaded = false; loadKB(); }
     }
 
     // ── Chat ──────────────────────────────────────────────────────────
@@ -1229,6 +1248,7 @@
         document.getElementById('paste-content').value = '';
         showStatus('success', '✓ Document uploaded and indexed.');
         loadDocs();
+        _kbLoaded = false; // invalidate so KB refreshes next visit
       } catch (e) {
         console.error('Upload error:', e);
         showStatus('error', '✗ ' + e.message);
@@ -1329,6 +1349,7 @@
 
     // ── Knowledge Base ────────────────────────────────────────────────
     async function loadKB() {
+      if (_kbLoaded) return;
       const wrap = document.getElementById('kb-content');
       wrap.innerHTML = `<div class="empty-state"><div class="spinner"></div></div>`;
 
@@ -1344,24 +1365,41 @@
         wrap.innerHTML = `<div class="empty-state"><div class="empty-state-title">Could not load knowledge base</div></div>`;
         return;
       }
+      _kbLoaded = true;
+
+      // Sort newest-first so the most recent upload appears at the top
+      docs.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+      const latestId = docs[0]?.id;
 
       // ── Documents section ───────────────────────────────────────────
       const docRows = docs.length
-        ? docs.map(d => `
-          <div class="rule-card">
+        ? docs.map((d, i) => {
+          const uploadedAt = d.created_at ? new Date(d.created_at).toLocaleString() : '';
+          const isLatest   = d.id === latestId;
+          const prevDoc    = docs[i + 1]; // next in list = older
+          const trace      = isLatest && prevDoc
+            ? `<div class="kb-update-trace">↑ Updated — supersedes <em>${esc(prevDoc.title)}</em></div>`
+            : '';
+          return `
+          <div class="rule-card ${isLatest ? 'kb-latest' : ''}">
             <div class="rule-card-header" onclick="this.parentElement.classList.toggle('open')">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;color:var(--muted)">
                 <path d="M4 2h6l3 3v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/>
                 <path d="M10 2v3h3"/>
               </svg>
               <span class="rule-card-key">${esc(d.title)}</span>
-              <span style="font-size:11px;color:var(--muted);margin-right:8px">${esc(d.origin)}</span>
+              ${isLatest ? `<span class="kb-badge-latest">Latest</span>` : ''}
+              <span style="font-size:11px;color:var(--muted);margin-right:8px;margin-left:auto">${uploadedAt}</span>
               <svg class="rule-card-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8">
                 <path d="M2 4l4 4 4-4"/>
               </svg>
             </div>
-            <div class="rule-card-body">${esc(d.filename || d.title)}</div>
-          </div>`).join('')
+            <div class="rule-card-body">
+              ${trace}
+              <div style="color:var(--muted);font-size:12px">${esc(d.filename || d.title)}</div>
+            </div>
+          </div>`;
+        }).join('')
         : `<div style="font-size:13px;color:var(--muted);padding:8px 0">No documents uploaded yet.</div>`;
 
       // ── Policy knowledge section ────────────────────────────────────
@@ -1401,7 +1439,10 @@
           <div>
             <div class="kb-section-title">
               Documents
-              <span class="kb-section-count">${docs.length}</span>
+              <span style="display:flex;align-items:center;gap:8px">
+                <span class="kb-section-count">${docs.length}</span>
+                <button class="btn-ghost" style="font-size:11px;padding:2px 8px" onclick="_kbLoaded=false;loadKB()">Refresh</button>
+              </span>
             </div>
             <div class="rules-list">${docRows}</div>
           </div>

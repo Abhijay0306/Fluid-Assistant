@@ -70,3 +70,4 @@ class DocResponse(BaseModel):
     title: str
     filename: str
     origin: str
+    created_at: Optional[str] = None
