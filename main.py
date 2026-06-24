@@ -93,6 +93,32 @@ def upload_file(request: UploadB64Request) -> DocResponse:
     return DocResponse(**entry)
 
 
+# ── Debug: test retrieval for a query ────────────────────────────────
+
+@app.get("/api/search")
+def search(q: str, top_k: int = 6, min_sim: float = 0.0):
+    """Debug endpoint: shows what chunks would be retrieved for a query."""
+    from supabase_client import get_supabase
+    from rag import embed
+    query_embedding = embed([q])[0]
+    sb = get_supabase()
+    result = sb.rpc(
+        "match_chunks",
+        {"query_embedding": query_embedding, "match_count": top_k, "min_similarity": min_sim},
+    ).execute()
+    rows = result.data or []
+    return [
+        {
+            "filename": r.get("filename"),
+            "section": r.get("section"),
+            "page": r.get("page_number"),
+            "similarity": round(r.get("similarity", 0), 4),
+            "text": r.get("chunk_text", "")[:200],
+        }
+        for r in rows
+    ]
+
+
 # ── Tickets ──────────────────────────────────────────────────────────
 
 @app.get("/api/tickets")

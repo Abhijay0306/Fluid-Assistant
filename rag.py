@@ -56,7 +56,7 @@ def retrieve(query: str, top_k: int = TOP_K) -> list[dict]:
     sb = get_supabase()
     result = sb.rpc(
         "match_chunks",
-        {"query_embedding": query_embedding, "match_count": top_k},
+        {"query_embedding": query_embedding, "match_count": top_k, "min_similarity": 0.1},
     ).execute()
     rows = result.data or []
 
