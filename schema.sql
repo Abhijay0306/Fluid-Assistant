@@ -80,6 +80,15 @@ begin
 end;
 $$;
 
--- ── Migration (run if table already existed) ────────────────────────
+-- 6. Dynamic knowledge entries (overlays rules.yaml at runtime)
+create table if not exists knowledge_entries (
+  key          text        primary key,
+  value        text        not null,
+  source_doc   text        not null default '',
+  document_id  uuid        references documents(id) on delete cascade,
+  updated_at   timestamptz not null default now()
+);
+
+-- ── Migrations (run if tables already existed) ───────────────────────
 -- alter table document_chunks add column if not exists page_number int;
 -- alter table document_chunks add column if not exists section text;

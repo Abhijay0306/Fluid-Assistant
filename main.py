@@ -17,6 +17,7 @@ from ingest import (
     save_document,
     text_to_chunks,
 )
+import knowledge_sync
 from rules import load_rules
 from schemas import AskRequest, AskResponse, DocRequest, DocResponse, UploadB64Request
 from tools import list_tickets
@@ -51,6 +52,10 @@ def ask(request: AskRequest) -> AskResponse:
 def add_doc(request: DocRequest) -> DocResponse:
     chunks = text_to_chunks(request.content)
     entry = save_document(title=request.title, chunks=chunks)
+    try:
+        knowledge_sync.sync(request.content, entry["id"], entry["filename"])
+    except Exception:
+        pass
     return DocResponse(**entry)
 
 
@@ -84,20 +89,26 @@ def upload_file(request: UploadB64Request) -> DocResponse:
     if len(data) > MAX_FILE_SIZE:
         raise HTTPException(422, "File exceeds 10 MB limit")
 
-    if not extract_text(data, request.filename).strip():
+    raw_text = extract_text(data, request.filename)
+    if not raw_text.strip():
         raise HTTPException(422, "Could not extract text from file")
 
     chunks = extract_structured_chunks(data, request.filename)
     doc_title = request.title.strip() or request.filename.rsplit(".", 1)[0].replace("_", " ").title()
     entry = save_document(title=doc_title, chunks=chunks, filename=request.filename)
+
+    try:
+        knowledge_sync.sync(raw_text, entry["id"], request.filename)
+    except Exception:
+        pass
+
     return DocResponse(**entry)
 
 
-# ── Debug: test retrieval for a query ────────────────────────────────
+# ── Debug: retrieval test ─────────────────────────────────────────────
 
 @app.get("/api/search")
 def search(q: str, top_k: int = 6, min_sim: float = 0.0):
-    """Debug endpoint: shows what chunks would be retrieved for a query."""
     from supabase_client import get_supabase
     from rag import embed
     query_embedding = embed([q])[0]
@@ -126,11 +137,20 @@ def get_tickets():
     return list_tickets()
 
 
-# ── Knowledge base (rules.yaml) ──────────────────────────────────────
+# ── Knowledge rules (yaml + dynamic Supabase entries) ────────────────
 
 @app.get("/api/rules")
 def get_rules():
     return load_rules()
+
+
+@app.get("/api/knowledge-entries")
+def get_knowledge_entries():
+    """Return raw dynamic knowledge_entries rows for KB panel attribution."""
+    from supabase_client import get_supabase
+    sb = get_supabase()
+    result = sb.table("knowledge_entries").select("key,value,source_doc,updated_at").execute()
+    return result.data or []
 
 
 # ── Error handler ────────────────────────────────────────────────────

@@ -1403,18 +1403,36 @@
         : `<div style="font-size:13px;color:var(--muted);padding:8px 0">No documents uploaded yet.</div>`;
 
       // ── Policy knowledge section ────────────────────────────────────
+      // rules.knowledge already contains the merged yaml + Supabase entries.
+      // We also fetch knowledge_entries separately to show source attribution.
+      let kbEntries = [];
+      try {
+        const keRes = await fetch(`${API}/api/knowledge-entries`);
+        if (keRes.ok) kbEntries = await keRes.json();
+      } catch {}
+      const dynamicKeys = new Set(kbEntries.map(e => e.key));
+
       const knowledge = rules.knowledge ?? {};
       const knowledgeRows = Object.entries(knowledge).map(([key, val]) => {
-        const body = typeof val === 'object' ? JSON.stringify(val, null, 2) : String(val);
+        const body   = typeof val === 'object' ? JSON.stringify(val, null, 2) : String(val);
+        const isDyn  = dynamicKeys.has(key);
+        const entry  = kbEntries.find(e => e.key === key);
+        const srcTag = isDyn
+          ? `<span class="kb-badge-latest" style="font-size:10px;margin-left:4px">from doc</span>`
+          : `<span style="font-size:10px;color:var(--muted);margin-left:4px">yaml</span>`;
+        const srcNote = entry?.source_doc
+          ? `<div style="font-size:11px;color:var(--muted);margin-top:6px">Source: ${esc(entry.source_doc)} · ${entry.updated_at ? new Date(entry.updated_at).toLocaleString() : ''}</div>`
+          : '';
         return `
           <div class="rule-card">
             <div class="rule-card-header" onclick="this.parentElement.classList.toggle('open')">
               <span class="rule-card-key">${esc(key.replace(/_/g, ' '))}</span>
-              <svg class="rule-card-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8">
+              ${srcTag}
+              <svg class="rule-card-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" style="margin-left:auto">
                 <path d="M2 4l4 4 4-4"/>
               </svg>
             </div>
-            <div class="rule-card-body">${esc(body)}</div>
+            <div class="rule-card-body">${esc(body)}${srcNote}</div>
           </div>`;
       }).join('');
 
